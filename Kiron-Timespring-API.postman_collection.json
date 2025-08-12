@@ -1,0 +1,412 @@
+{
+  "info": {
+    "_postman_id": "kiron-timespring-api-collection",
+    "name": "Kiron Timespring API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for Kiron Timespring API (Biometric Attendance & Employee Management)"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"admin\", \"password\": \"password123\"}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employees - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"first_name\": \"Jane\", \"last_name\": \"Doe\", \"custom_national_id\": \"12345678\", \"gender\": \"Female\", \"mobile_number\": \"+254712345678\", \"email\": \"jane.doe@example.com\", \"date_of_birth\": \"1990-01-15\", \"date_of_joining\": \"2024-01-01\", \"company\": \"Kiron Construction Company Limited\", \"department\": \"Construction\", \"designation\": \"Site Engineer\", \"site_id\": \"SITE001\", \"status\": \"Active\"}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "employees"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employees - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "employees"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employees - Get Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/employees/HR-EMP-00001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "HR-EMP-00001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employees - Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"mobile_number\": \"+254712345679\", \"status\": \"Inactive\"}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/employees/HR-EMP-00001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "HR-EMP-00001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employees - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/employees/HR-EMP-00001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "HR-EMP-00001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Biometrics - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"employee_id\": \"HR-EMP-00001\", \"biometric_type\": \"face\", \"biometric_data\": \"base64_face_template\", \"device_id\": \"FaceDevice-001\", \"quality_score\": 0.98}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/biometrics",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "biometrics"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Biometrics - Verify",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"biometric_data\": \"base64_face_template\", \"device_id\": \"FaceDevice-001\", \"threshold\": 0.8}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/biometrics/verify",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "biometrics",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Biometrics - Get Employee Biometrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/biometrics/employee/HR-EMP-00001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "biometrics",
+            "employee",
+            "HR-EMP-00001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance - Clock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"employee_id\": \"HR-EMP-00001\", \"timestamp\": \"2025-06-11T08:00:00\", \"status\": \"clock-in\", \"device_id\": \"FaceDevice-001\"}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/attendance/clock",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "attendance",
+            "clock"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance - Batch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"records\": [{\"employee_id\": \"HR-EMP-00001\", \"timestamp\": \"2025-06-11T08:00:00\", \"status\": \"clock-in\", \"device_id\": \"FaceDevice-001\"}, {\"employee_id\": \"HR-EMP-00002\", \"timestamp\": \"2025-06-11T08:05:00\", \"status\": \"clock-in\", \"device_id\": \"FaceDevice-001\"}], \"batch_id\": \"batch-2025-06-11-morning\", \"offline_sync\": false}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/v1/attendance/batch",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "attendance",
+            "batch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance - Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/attendance/status/e5e8a1b2c3d4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "attendance",
+            "status",
+            "e5e8a1b2c3d4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance - Pending",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/v1/attendance/pending",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "v1",
+            "attendance",
+            "pending"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
