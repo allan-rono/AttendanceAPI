@@ -14,7 +14,7 @@ exports.seed = async function(knex) {
 
   // Reset sequences (PostgreSQL)
   if (knex.client.config.client === 'pg') {
-    await knex.raw('ALTER SEQUENCE device_credentials_id_seq RESTART WITH 1');
+    await knex.raw('ALTER SEQUENCE ?? RESTART WITH ?', ['device_credentials_id_seq', 1]);
     await knex.raw('ALTER SEQUENCE employees_id_seq RESTART WITH 1');
     await knex.raw('ALTER SEQUENCE biometrics_id_seq RESTART WITH 1');
     await knex.raw('ALTER SEQUENCE attendance_id_seq RESTART WITH 1');

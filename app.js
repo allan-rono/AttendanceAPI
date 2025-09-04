@@ -30,6 +30,7 @@ const syncRoutes = require('./routes/sync');
 const statusRoutes = require('./routes/status');
 const mockRoutes = require('./routes/mock');
 const deviceRoutes = require('./routes/devices');
+const sitesRoutes = require('./routes/sites');
 
 // Import services
 
@@ -193,11 +194,13 @@ app.use(`/api/${API_VERSION}/biometrics`, biometricRoutes);
 app.use(`/api/${API_VERSION}/sync`, syncRoutes);
 app.use(`/api/${API_VERSION}/status`, statusRoutes);
 app.use(`/api/${API_VERSION}/devices`, deviceRoutes);
+app.use(`/api/${API_VERSION}/sites`, sitesRoutes);
 
 // Legacy route support
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/sites', sitesRoutes);
 
 // Mock routes (only in development)
 if (process.env.NODE_ENV !== 'production') {
@@ -242,7 +245,8 @@ app.get('/api/docs', (req, res) => {
       attendance: '/attendance/clock',
       biometrics: '/biometrics',
       sync: '/sync',
-      status: '/status'
+      status: '/status',
+      sites: '/sites'
     },
     documentation: 'https://docs.kironccltd.co.ke/api'
   });

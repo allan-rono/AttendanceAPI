@@ -13,6 +13,30 @@ function generateRecordHash(record) {
   return crypto.createHash('sha256').update(hashString).digest('hex');
 }
 
+const DOMPurify = require('isomorphic-dompurify');
+
+// Add sanitization middleware
+const sanitizeInput = (req, res, next) => {
+  const sanitizeObject = (obj) => {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string') {
+        obj[key] = DOMPurify.sanitize(obj[key]);
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        sanitizeObject(obj[key]);
+      }
+    }
+  };
+  
+  if (req.body) sanitizeObject(req.body);
+  if (req.query) sanitizeObject(req.query);
+  if (req.params) sanitizeObject(req.params);
+  
+  next();
+};
+
+// Apply to all routes
+router.use(sanitizeInput);
+
 // POST /api/v1/attendance/clock - Single attendance record
 router.post(
   '/clock',

@@ -46,26 +46,20 @@ class FieldEncryption {
     if (!plaintext) return null;
     
     try {
-      // Generate random salt and IV
       const salt = crypto.randomBytes(this.saltLength);
       const iv = crypto.randomBytes(this.ivLength);
       
-      // Derive key with context
       const contextSalt = Buffer.concat([salt, Buffer.from(context, 'utf8')]);
       const key = this.deriveKey(contextSalt);
       
-      // Create cipher
-      const cipher = crypto.createCipher(this.algorithm, key);
-      cipher.setAAD(Buffer.from(context, 'utf8')); // Additional authenticated data
+      // Fixed: Use createCipherGCM
+      const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+      cipher.setAAD(Buffer.from(context, 'utf8'));
       
-      // Encrypt data
       let encrypted = cipher.update(plaintext, 'utf8');
       encrypted = Buffer.concat([encrypted, cipher.final()]);
       
-      // Get authentication tag
       const tag = cipher.getAuthTag();
-      
-      // Combine all components: salt + iv + tag + encrypted
       const combined = Buffer.concat([salt, iv, tag, encrypted]);
       
       return combined.toString('base64');

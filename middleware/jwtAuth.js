@@ -12,7 +12,7 @@ const verifyJWT = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyJwt(token); // ✅ FIXED: Use imported function
     req.device = decoded;
     next();
   } catch (err) {

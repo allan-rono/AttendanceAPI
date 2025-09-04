@@ -14,92 +14,32 @@ class APIError extends Error {
 }
 
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
-
-  // Log error details
   logger.error('Error occurred:', {
-    message: err.message,
+    error: err.message,
     stack: err.stack,
-    url: req.originalUrl,
+    url: req.url,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    body: req.body,
-    params: req.params,
-    query: req.query
+    userAgent: req.get('User-Agent')
   });
 
-  // Mongoose bad ObjectId
-  if (err.name === 'CastError') {
-    const message = 'Invalid resource ID format';
-    error = new APIError(message, 400, 'INVALID_ID');
+  // Generic error response in production
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(err.statusCode || 500).json({
+      status: 'error',
+      error_code: err.statusCode || 500,
+      message: 'An error occurred processing your request',
+      request_id: req.headers['x-request-id'] || 'unknown'
+    });
   }
 
-  // Mongoose duplicate key
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    const message = `Duplicate value for field: ${field}`;
-    error = new APIError(message, 400, 'DUPLICATE_FIELD');
-  }
-
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message).join(', ');
-    error = new APIError(message, 400, 'VALIDATION_ERROR');
-  }
-
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = new APIError(message, 401, 'INVALID_TOKEN');
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = new APIError(message, 401, 'TOKEN_EXPIRED');
-  }
-
-  // ERPNext API errors
-  if (err.response && err.response.data) {
-    const message = err.response.data.message || 'ERPNext API error';
-    error = new APIError(message, err.response.status || 500, 'ERPNEXT_ERROR');
-  }
-
-  // Rate limiting errors
-  if (err.status === 429) {
-    error = new APIError('Too many requests', 429, 'RATE_LIMIT_EXCEEDED');
-  }
-
-  // Default to 500 server error
-  const statusCode = error.statusCode || 500;
-  const errorCode = error.errorCode || 'INTERNAL_SERVER_ERROR';
-
-  const errorResponse = {
+  // Detailed errors only in development
+  res.status(err.statusCode || 500).json({
     status: 'error',
-    error_code: statusCode,
-    message: error.message || 'Internal Server Error',
-    timestamp: new Date().toISOString(),
-    request_id: req.headers['x-request-id'] || 'unknown'
-  };
-
-  // Add error code for client handling
-  if (errorCode !== 'INTERNAL_SERVER_ERROR') {
-    errorResponse.error_type = errorCode;
-  }
-
-  // Add details in development mode
-  if (process.env.NODE_ENV === 'development') {
-    errorResponse.stack = err.stack;
-    errorResponse.details = error.details;
-  }
-
-  // Add retry information for certain errors
-  if (statusCode === 429 || statusCode === 503) {
-    errorResponse.retry_after = 60; // seconds
-  }
-
-  res.status(statusCode).json(errorResponse);
+    error_code: err.statusCode || 500,
+    message: err.message,
+    stack: err.stack
+  });
 };
 
 // Helper function for consistent error responses

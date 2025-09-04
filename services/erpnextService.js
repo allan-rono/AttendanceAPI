@@ -2,6 +2,12 @@ const axios = require('axios');
 const Bottleneck = require('bottleneck');
 const logger = require('../utils/logger');
 
+// Configure axios defaults to prevent 417 errors
+axios.defaults.headers.common['Expect'] = '';
+// Disable automatic Expect header for large requests
+axios.defaults.maxContentLength = Infinity;
+axios.defaults.maxBodyLength = Infinity;
+
 const ERP_BASE = process.env.ERP_BASE_URL;
 const headers = {
   Authorization: `token ${process.env.ERP_API_KEY}:${process.env.ERP_API_SECRET}`,
@@ -23,8 +29,10 @@ const retryConfig = {
   retries: parseInt(process.env.ERP_RETRY_COUNT) || 3,
   retryDelay: parseInt(process.env.ERP_RETRY_DELAY) || 1000,
   retryCondition: (error) => {
-    // Retry on network errors or 5xx server errors
-    return !error.response || error.response.status >= 500;
+    // Retry on network errors, 5xx server errors, or 417 Expectation Failed
+    return !error.response || 
+           error.response.status >= 500 || 
+           error.response.status === 417;
   }
 };
 
@@ -34,13 +42,25 @@ async function safePost(url, payload, options = {}) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await limiter.schedule(() => 
-        axios.post(url, payload, { 
-          headers, 
-          timeout: parseInt(process.env.ERP_TIMEOUT) || 30000,
-          ...options 
-        })
-      );
+      const axiosConfig = {
+        headers: {
+          ...headers,
+          // Explicitly prevent Expect header to avoid 417 errors
+          'Expect': ''
+        },
+        timeout: parseInt(process.env.ERP_TIMEOUT) || 30000,
+        // Disable automatic request body compression that can trigger Expect header
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Ensure no Expect header is sent
+        transformRequest: [function (data, headers) {
+          delete headers['Expect'];
+          return data;
+        }],
+        ...options 
+      };
+
+      const response = await limiter.schedule(() => axios.post(url, payload, axiosConfig));
 
       return { 
         success: true, 
@@ -52,6 +72,13 @@ async function safePost(url, payload, options = {}) {
 
       // Log attempt
       logger.warn(`ERPNext POST attempt ${attempt}/${maxRetries} failed: ${url} - ${err.message}`);
+      
+      // Log more details for 417 errors
+      if (err.response?.status === 417) {
+        logger.error('HTTP 417 Expectation Failed - Request headers:', err.config?.headers);
+        logger.error('HTTP 417 Expectation Failed - URL:', url);
+        logger.error('HTTP 417 Expectation Failed - Payload:', payload);
+      }
 
       // Check if we should retry
       if (attempt < maxRetries && retryConfig.retryCondition(err)) {
@@ -84,24 +111,44 @@ async function safeGet(url, params = {}, options = {}) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await limiter.schedule(() => 
-        axios.get(url, { 
-          headers, 
-          params, 
-          timeout: parseInt(process.env.ERP_TIMEOUT) || 30000,
-          ...options 
-        })
-      );
+      const axiosConfig = {
+        headers: {
+          ...headers,
+          // Explicitly prevent Expect header to avoid 417 errors
+          'Expect': ''
+        },
+        params, 
+        timeout: parseInt(process.env.ERP_TIMEOUT) || 30000,
+        // Disable automatic request body compression that can trigger Expect header
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        // Ensure no Expect header is sent
+        transformRequest: [function (data, headers) {
+          delete headers['Expect'];
+          return data;
+        }],
+        ...options 
+      };
+
+      const response = await limiter.schedule(() => axios.get(url, axiosConfig));
 
       return { 
         success: true, 
         data: response.data.data,
+        total: response.data.total || (Array.isArray(response.data.data) ? response.data.data.length : 0),
         status: response.status
       };
     } catch (err) {
       lastError = err;
 
       logger.warn(`ERPNext GET attempt ${attempt}/${maxRetries} failed: ${url} - ${err.message}`);
+      
+      // Log more details for 417 errors
+      if (err.response?.status === 417) {
+        logger.error('HTTP 417 Expectation Failed - Request headers:', err.config?.headers);
+        logger.error('HTTP 417 Expectation Failed - URL:', url);
+        logger.error('HTTP 417 Expectation Failed - Params:', params);
+      }
 
       if (attempt < maxRetries && retryConfig.retryCondition(err)) {
         const delay = retryConfig.retryDelay * Math.pow(2, attempt - 1);
@@ -114,6 +161,10 @@ async function safeGet(url, params = {}, options = {}) {
   }
 
   logger.error(`ERPNext GET failed after ${maxRetries} attempts: ${url} - ${lastError.message}`);
+  if (lastError.response?.data) {
+    logger.error('ERPNext error response:', lastError.response.data);
+  }
+  
   return { 
     success: false, 
     error: lastError.response?.data?.message || lastError.message,
@@ -412,6 +463,117 @@ async function getSystemInfo() {
   }
 }
 
+// Get all sites with optional filtering
+async function getSites(options = {}) {
+  const { limit = 100, offset = 0, search, status } = options;
+  
+  try {
+    const url = `${ERP_BASE}/api/resource/Site`;
+    
+    // Build filters array
+    const filters = [];
+    
+    if (status) {
+      filters.push(["status", "=", status]);
+    }
+    
+    if (search) {
+      // Search in site name and description
+      filters.push([
+        "or",
+        ["site_name", "like", `%${search}%`]
+      ]);
+    }
+
+    const params = {
+      fields: JSON.stringify([
+        "name",
+        "site_name", 
+        "status"
+      ]),
+      limit_start: offset,
+      limit_page_length: limit,
+      order_by: "site_name asc"
+    };
+
+    // Add filters if any exist
+    if (filters.length > 0) {
+      params.filters = JSON.stringify(filters);
+    }
+
+    logger.debug('Fetching sites with params:', params);
+
+    const result = await safeGet(url, params);
+    
+    if (result.success) {
+      // Transform the data to match expected format
+      const transformedData = result.data.map(site => ({
+        id: site.name,
+        site_name: site.site_name,
+        status: site.status
+      }));
+
+      return {
+        success: true,
+        data: transformedData,
+        total: result.total
+      };
+    }
+
+    return result;
+
+  } catch (error) {
+    logger.error('Error in getSites:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Get a specific site by ID
+async function getSiteById(siteId) {
+  try {
+    const url = `${ERP_BASE}/api/resource/Site/${siteId}`;
+    
+    const params = {
+      fields: JSON.stringify([
+        "name",
+        "site_name", 
+        "status"
+      ])
+    };
+
+    logger.debug(`Fetching site by ID: ${siteId}`);
+
+    const result = await safeGet(url, params);
+    
+    if (result.success) {
+      // Transform the data to match expected format
+      const site = result.data;
+      const transformedData = {
+        id: site.name,
+        site_name: site.site_name,
+        status: site.status
+      };
+
+      return {
+        success: true,
+        data: transformedData
+      };
+    }
+
+    return result;
+
+  } catch (error) {
+    logger.error('Error in getSiteById:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 module.exports = {
   checkNationalID,
   registerEmployee,
@@ -419,5 +581,7 @@ module.exports = {
   submitBatchCheckin,
   registerBatchEmployees,
   healthCheck,
-  getSystemInfo
+  getSystemInfo,
+  getSites,
+  getSiteById
 };
