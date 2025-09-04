@@ -39,9 +39,17 @@ if (require.main === module) {
     // Start background services
     // Start automatic pending-attendance sync if enabled
     if (process.env.ENABLE_SYNC_SERVICE !== 'false') {
-      syncService.start();
+    syncService.start();
     }
-    startScheduler();
+
+    // Start scheduler only when explicitly enabled
+    if (String(process.env.START_SCHEDULER || 'false').toLowerCase() === 'true') {
+      logger.info(`⏱️  Scheduler enabled. Using SELF_BASE_URL=${process.env.SELF_BASE_URL}`);
+      startScheduler();
+    } else {
+      logger.info('⏱️  Scheduler disabled (START_SCHEDULER=false)');
+    }
+
   });
 }
 
