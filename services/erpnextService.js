@@ -468,7 +468,7 @@ async function getSites(options = {}) {
   const { limit = 100, offset = 0, search, status } = options;
   
   try {
-    const url = `${ERP_BASE}/api/resource/Site`;
+    const url = `${ERP_BASE}/api/resource/Construction Site`;
     
     // Build filters array
     const filters = [];
@@ -534,7 +534,7 @@ async function getSites(options = {}) {
 // Get a specific site by ID
 async function getSiteById(siteId) {
   try {
-    const url = `${ERP_BASE}/api/resource/Site/${siteId}`;
+    const url = `${ERP_BASE}/api/resource/Construction Site/${siteId}`;
     
     const params = {
       fields: JSON.stringify([
